@@ -12,8 +12,7 @@
  */
 #pragma once 
 
-#define MAX_NAME 100
-#define MAX_DATA 1024
+
 
 #include "packet.h"
 #include <malloc.h>

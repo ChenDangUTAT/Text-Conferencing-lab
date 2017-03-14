@@ -5,10 +5,10 @@
  */
 
 #include "server_UNIX.h"
+
 #define MAX_TIMEOUT_SEC 180
 #define MAX_TIMEOUT_USEC 0
 
-#define DEBUG
 
 
 int server_unix_action(int* listen_socket){
@@ -25,7 +25,11 @@ int server_unix_action(int* listen_socket){
     
     struct socket_entry *temp_entry;
     
+    struct socket_entry entry_array[1000];
+    
     struct packet new_packet;
+    
+    struct packet reply_packet;
     
     int addr_size = sizeof(struct sockaddr_storage);
     
@@ -59,13 +63,17 @@ int server_unix_action(int* listen_socket){
         
         tout.tv_sec = MAX_TIMEOUT_SEC;
         tout.tv_usec = MAX_TIMEOUT_USEC;
+#ifdef DEBUG
+      printf("A loop is started\n");  
+#endif
         
-        iResult = select(nfds,&read_fd,NULL,NULL,&tout);
+        
+        iResult = select(nfds,&read_fd,NULL,NULL,/*&tout*/NULL);
         // reset the timeout
         
         
 #ifdef DEBUG
-      printf("A loop is started\n,the function select has returned with result %d",iResult);      
+      printf("the function select has returned with result %d\n",iResult);      
 #endif      
         
         if(iResult == -1){
@@ -128,26 +136,26 @@ int server_unix_action(int* listen_socket){
         
         
         // if we reach here, then a packet is sent;
-        unsigned i;
-        for(i = 0;i < nfds;i++){
+        unsigned curr_socket;
+        for(curr_socket = 0;curr_socket < nfds;curr_socket++){
             
-            if(FD_ISSET(i,&read_fd)){
+            if(FD_ISSET(curr_socket,&read_fd)){
                 break;
             }
         }
         
-        if(i == nfds){
+        if(curr_socket == nfds){
         
             printf("unexpected error occurred\n");
             return -1;
         
         }
         
-        char* buffer;
+        char *buffer;
         
         buffer = malloc(sizeof(int)*2+sizeof(char)*(MAX_NAME+MAX_DATA));
         
-        iResult = recv(i,buffer,sizeof(int)*2+sizeof(char)*(MAX_NAME+MAX_DATA),0);
+        iResult = recv(curr_socket,buffer,(sizeof(int)*2+sizeof(char)*(MAX_NAME+MAX_DATA)),0);
     
         if(iResult < 0){
         
@@ -159,14 +167,14 @@ int server_unix_action(int* listen_socket){
         if(iResult == 0){
         // close the socket and move on
             
-            close(i);
+            close(curr_socket);
             
             // required further implementation
             
-            //socket_db_remove_sid(i);
+            // socket_db_remove_sid(i);
             // required further implementation
             
-            FD_CLR(i,&all_user);
+            FD_CLR(curr_socket,&all_user);
             
  
         
@@ -185,12 +193,99 @@ int server_unix_action(int* listen_socket){
     // from this point on we should be able to handle the packets.
     
     
-    
-    
-    
-    
-    
-    
+    // login
+        if(new_packet.type == LOGIN){
+            
+            
+            //need implementation
+            //temp_entry = socket_db_access_by_sid(curr_socket);
+            //need implementation
+           
+            
+            if(true){
+                
+                unsigned msg_size;
+                
+                reply_packet.type = LO_NAK;
+                strcpy(reply_packet.source,"server");
+                strcpy(reply_packet.data,"User already login");
+                reply_packet.size = strlen(reply_packet.data);
+                
+                char* msg = msg_generator(reply_packet,&msg_size);
+#ifdef DEBUGLOGIN
+                printf("The message sent should be %s\n",msg);
+#endif
+                send(curr_socket,msg,msg_size,0);
+                free(msg);
+                continue;
+                
+                        
+            }
+            unsigned password_size= new_packet.size - strlen(new_packet.source)-1;
+            
+            char* password = malloc(sizeof(char)*(password_size+1));
+            
+            memcpy(password,new_packet.data+strlen(new_packet.source)+1,password_size);
+            
+#ifdef DEBUGLOGIN
+            
+            printf("The password extracted is %s, it has a size of %d, the source client id is %s\n",password,password_size,new_packet.source);
+            
+#endif 
+            
+            // needs implementation
+            //bool valid = password_verification(new_packet.source,password);
+            //needs implementation
+            
+            if(false){
+            
+                unsigned msg_size;
+                
+            
+                reply_packet.type = LO_ACK;
+                strcpy(reply_packet.source,"server");
+                strcpy(reply_packet.data,"login_successful");
+                reply_packet.size = strlen(reply_packet.data);
+                
+                char* msg = msg_generator(reply_packet,&msg_size);
+#ifdef DEBUGLOGIN
+                printf("The message sent should be %s\n",msg);
+#endif
+                send(curr_socket,msg,msg_size,0);
+                
+                free(msg);
+                continue;
+            
+            
+            }else{
+            
+                unsigned msg_size;
+                
+                reply_packet.type = LO_NAK;
+                strcpy(reply_packet.source,"server");
+                strcpy(reply_packet.data,"Invalid Password");
+                reply_packet.size = strlen(reply_packet.data);
+                
+                char* msg = msg_generator(reply_packet,&msg_size);
+#ifdef DEBUGLOGIN
+                printf("The message sent should be %s\n",msg);
+#endif
+                send(curr_socket,msg,msg_size,0);
+                free(msg);
+                continue;
+            
+            
+            
+            }
+            
+            
+            
+           
+        
+        
+        
+        
+        }
     
     
     
@@ -211,7 +306,7 @@ int server_unix_action(int* listen_socket){
     
 
 
-
+    return 0;
 
 
 

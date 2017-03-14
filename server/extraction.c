@@ -5,6 +5,8 @@
  */
 
 #include "extraction.h"
+#define DEBUG
+
 
 bool extraction(char* msg_string, struct packet* packet) {
     // extract total_frag
@@ -22,7 +24,7 @@ bool extraction(char* msg_string, struct packet* packet) {
 
 #ifdef DEBUG
 
-    printf("The total_frag is %d\n", packet->total_frag);
+    printf("The type number is %d\n", packet->type);
 
 
 #endif
@@ -73,13 +75,13 @@ bool extraction(char* msg_string, struct packet* packet) {
         packet->source[name_counter] = msg_string[ext_counter + name_counter];
 
     }
-
+    packet->source[name_counter] = '\0';
     ext_counter += name_counter;
     // extraction data
 
 #ifdef DEBUG
 
-    printf("The file name is %s\n", packet->filename);
+    printf("The file source is %s\n", packet->source);
 
 #endif
 
@@ -90,6 +92,15 @@ bool extraction(char* msg_string, struct packet* packet) {
 
 
    }
+    
+    packet->data[packet->size+1] = '\0';
+    
+#ifdef DEBUG
+    
+    printf("The file data is %s\n",packet->data);
+    
+#endif
+    
     
     
     //memcpy(packet->filedata,msg_string+ext_counter+1,packet->size);

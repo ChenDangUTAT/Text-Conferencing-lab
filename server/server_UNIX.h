@@ -9,6 +9,7 @@
 
 
 
+
 // other necessary libraries for UNIX like system
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -20,8 +21,12 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
+
+#include "type_header.h"
 #include "extraction.h"
 #include "socket_entry.h"
+#include "packet_generator.h"
+
 
 // this function is responsible for setting up the UDP receiving socket
 int server_unix_setup(char* udp_port,int* listen_socket);
