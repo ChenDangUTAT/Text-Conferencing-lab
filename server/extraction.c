@@ -11,7 +11,7 @@
 bool extraction(char* msg_string, struct packet* packet) {
     // extract total_frag
 #ifdef DEBUG
-    printf("The raw string is %s\n\n\n", msg_string);
+    printf("\n\nThe raw string is %s\n\n\n", msg_string);
 #endif
     
     unsigned ext_counter = 0;
@@ -86,14 +86,14 @@ bool extraction(char* msg_string, struct packet* packet) {
 #endif
 
     unsigned i=1;
-    for (; i < packet->size + 1; i++) {
+    for (; i < packet->size+1; i++) {
 
         packet->data[i - 1] = msg_string[ext_counter + i];
 
 
    }
     
-    packet->data[packet->size+1] = '\0';
+    packet->data[packet->size] = '\0';
     
 #ifdef DEBUG
     

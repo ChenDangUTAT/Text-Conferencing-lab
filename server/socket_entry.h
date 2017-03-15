@@ -11,6 +11,13 @@
  * Created on March 12, 2017, 8:03 PM
  */
 #pragma once
+#include <stdbool.h>
+#include <netinet/in.h>
+
+
+#ifndef MAX_NAME
+#define MAX_NAME 100
+#endif
 
 struct socket_entry{
 
@@ -24,7 +31,9 @@ struct socket_entry{
     
     bool is_session_id_set;
     
-    char session_ID;
+    unsigned int session_ID[10];
+    
+    struct socket_entry* next;
    
 
 };
