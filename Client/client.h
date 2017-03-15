@@ -32,7 +32,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
-
+#include <pthread.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
