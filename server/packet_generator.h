@@ -5,26 +5,21 @@
  */
 
 /* 
- * File:   packet.h
+ * File:   packet_generator.h
  * Author: dangche1
  *
- * Created on February 2, 2017, 5:47 PM
+ * Created on March 14, 2017, 6:00 PM
  */
-
 #pragma once
-#define MAX_NAME 100
-#define MAX_DATA 1024
+
+#include "packet.h"
+#include <string.h>
+#include <malloc.h>
 
 
-struct packet {
-    
-unsigned int type;
 
-unsigned int size;
 
-unsigned char source[MAX_NAME];
+char* msg_generator(struct packet input,unsigned* size);
 
-unsigned char data[MAX_DATA];
 
-};
 
