@@ -16,7 +16,7 @@ int server_unix_action(int* listen_socket) {
 
     // Here we will set up things to handle.
 
-    struct session_entry * head_s;
+    struct session_entry * head_s = malloc(sizeof (struct session_entry));
 
     int listener = *listen_socket;
 
@@ -309,6 +309,12 @@ int server_unix_action(int* listen_socket) {
 #endif
                 send(curr_socket, msg, msg_size, 0);
                 free(msg);
+                close(curr_socket);
+                socket_db_rm_sid(curr_socket,head);
+                FD_CLR(curr_socket,&all_user);
+                
+                
+                
                 continue;
 
 
@@ -345,6 +351,24 @@ int server_unix_action(int* listen_socket) {
                 unsigned msg_size;
 
                 //still needs to quit all sessions if there is any.
+                
+                if(temp_entry->is_session_id_set){
+                    
+                struct session_entry* temp_session_entry = session_db_search_sid(temp_entry->session_ID[0], head_s);
+                
+                
+                bool iResult_soc = socket_db_leave_session(temp_entry,temp_session_entry->session_tag);
+
+                bool iResult_ses = session_db_leave_socket(curr_socket, temp_session_entry,head_s);
+                
+                
+        
+                
+                
+                
+                
+                
+                }
 
                 socket_db_rm_sid(curr_socket, head);
 
@@ -599,15 +623,108 @@ int server_unix_action(int* listen_socket) {
 
         if (new_packet.type == JOIN) {
 
-            struct session_entry* curr_s = session_db_search_sname(new_packet.data, head_s);
+            temp_entry = NULL;
 
-            if (curr_s == NULL) {
+            temp_entry = socket_db_search_sid(curr_socket, head);
 
+            if (/*temp_entry->is_session_id_set == false* this limits the user to join one session only
+                 */true
+                    ) {
+
+                struct session_entry* curr_s = session_db_search_sname(new_packet.data, head_s);
+
+                if (curr_s == NULL) {
+
+                    unsigned int msg_size;
+
+                    reply_packet.type = JN_NAK;
+                    strcpy(reply_packet.source, "server");
+                    strcpy(reply_packet.data, "Session does not exist");
+                    reply_packet.size = strlen(reply_packet.data);
+
+                    char* msg = msg_generator(reply_packet, &msg_size);
+
+                    send(curr_socket, msg, msg_size, 0);
+                    free(msg);
+
+                    continue;
+
+                } else {
+
+                    bool iResult_full = session_db_join_socket(curr_socket, curr_s);
+
+                    temp_entry = NULL;
+
+                    temp_entry = socket_db_search_sid(curr_socket, head);
+
+                    bool iResult_sfull = socket_db_join_session(temp_entry, curr_s->session_tag);
+
+                    if (iResult_full && iResult_sfull) {
+
+                        unsigned int msg_size;
+
+                        reply_packet.type = JN_ACK;
+                        strcpy(reply_packet.source, "server");
+                        strcpy(reply_packet.data, "Join successful");
+                        reply_packet.size = strlen(reply_packet.data);
+
+                        char* msg = msg_generator(reply_packet, &msg_size);
+
+                        send(curr_socket, msg, msg_size, 0);
+                        free(msg);
+                        continue;
+
+
+
+                    } else {
+
+
+
+                        unsigned int msg_size;
+
+                        if (!iResult_full) {
+
+                            printf("Session is full\n");
+
+
+                        }
+
+                        if (!iResult_sfull) {
+                            printf("Join too many sessions\n");
+
+                        }
+
+
+                        reply_packet.type = JN_NAK;
+                        strcpy(reply_packet.source, "server");
+                        strcpy(reply_packet.data, "Session is full or you have joined too many sessions");
+                        reply_packet.size = strlen(reply_packet.data);
+
+                        char* msg = msg_generator(reply_packet, &msg_size);
+
+                        send(curr_socket, msg, msg_size, 0);
+                        free(msg);
+
+                        continue;
+
+
+
+
+
+
+                    }
+
+
+
+
+
+                }
+            } else {
                 unsigned int msg_size;
 
                 reply_packet.type = JN_NAK;
                 strcpy(reply_packet.source, "server");
-                strcpy(reply_packet.data, "Session does not exist");
+                strcpy(reply_packet.data, "you have joined too many sessions");
                 reply_packet.size = strlen(reply_packet.data);
 
                 char* msg = msg_generator(reply_packet, &msg_size);
@@ -616,139 +733,158 @@ int server_unix_action(int* listen_socket) {
                 free(msg);
 
                 continue;
+            }
+        }
+
+        if (new_packet.type == MESSAGE) {
+
+            temp_entry = NULL;
+
+            temp_entry = socket_db_search_sid(curr_socket, head);
+
+            if (temp_entry->is_session_id_set == false) {
+
+                continue;
+
 
             } else {
 
-                bool iResult_full = session_db_join_socket(curr_socket, curr_s);
-
-                temp_entry = NULL;
-
-                temp_entry = socket_db_search_sid(curr_socket, head);
-
-                bool iResult_sfull = socket_db_join_session(temp_entry, curr_s->session_tag);
-
-                if (iResult_full&&iResult_sfull) {
-
-                    unsigned int msg_size;
-
-                    reply_packet.type = JN_ACK;
-                    strcpy(reply_packet.source, "server");
-                    strcpy(reply_packet.data, "Join successful");
-                    reply_packet.size = strlen(reply_packet.data);
-
-                    char* msg = msg_generator(reply_packet, &msg_size);
-
-                    send(curr_socket, msg, msg_size, 0);
-                    free(msg);
-                    continue;
-
-
-
-                } else {
-
-
-
-                    unsigned int msg_size;
-                    
-                    if(!iResult_full){
-                    
-                        printf("Session is full\n");
-                    
-                    
-                    }
-                    
-                    if(!iResult_sfull){
-                        printf("Join too many sessions\n");
-                    
-                    }
-                    
-                    
-                    reply_packet.type = JN_NAK;
-                    strcpy(reply_packet.source, "server");
-                    strcpy(reply_packet.data, "Session is full or you have joined too many sessions");
-                    reply_packet.size = strlen(reply_packet.data);
-
-                    char* msg = msg_generator(reply_packet, &msg_size);
-
-                    send(curr_socket, msg, msg_size, 0);
-                    free(msg);
-
-                    continue;
-
-
-
-
-
-
-                }
-
-
-
-
-
-            }
-        }
-        
-        if(new_packet.type = MESSAGE){
-        
-            temp_entry =NULL;
-            
-            temp_entry = socket_db_search_sid(curr_socket, head); 
-            
-            if(temp_entry->is_session_id_set == false){
-            
-                continue;
-            
-            
-            }else{
-                
                 // find the temporary session entry, find all of the clients and get their sockets
-                struct session_entry* temp_session_entry = session_db_search_sid(temp_entry->session_ID[0],head_s);
-                
-                int counter =0;
-                for(;counter< MAX_MEM; counter++){
-                    
+                struct session_entry* temp_session_entry = session_db_search_sid(temp_entry->session_ID[0], head_s);
+
+                int counter = 0;
+                for (; counter < MAX_MEM; counter++) {
+
                     // means end of session
-                    if( temp_session_entry->socket_id[counter] ==0)
+                    if (temp_session_entry->socket_id[counter] == 0)
                         break;
                     // send the msg=
                     unsigned int msg_size;
 
                     reply_packet.type = MESSAGE;
                     strcpy(reply_packet.source, "server");
-                    strcpy(reply_packet.data, new_packet.data);
+                    strcpy(reply_packet.data, new_packet.source);
+                    strcat(reply_packet.data, " : ");
+                    strcat(reply_packet.data, new_packet.data);
                     reply_packet.size = strlen(reply_packet.data);
 
                     char* msg = msg_generator(reply_packet, &msg_size);
 
                     send(temp_session_entry->socket_id[counter], msg, msg_size, 0);
                     free(msg);
-                    
-                   // we assume it is zeros thus have to be 0
-                    
-                    
-                    
+
+                    // we assume it is zeros thus have to be 0
+
+
+
                 }
-            
-            
-            
+
+
+
             }
-        
-        
-        
-        
-        
-        
-        
-        
-        
+
+
+
+
+
+
+
+
+
         }
-        
-        
-        
-        
-        
-        
+
+        if (new_packet.type == LEAVE_SESS) {
+
+            temp_entry = NULL;
+
+            temp_entry = socket_db_search_sid(curr_socket, head);
+
+            if (temp_entry->is_session_id_set == false) {
+                
+                                
+                unsigned int msg_size;
+
+                reply_packet.type = LEAVE_SESS;
+                strcpy(reply_packet.source, "server");
+                strcpy(reply_packet.data, "You are not in any session");
+                reply_packet.size = strlen(reply_packet.data);
+
+                char* msg = msg_generator(reply_packet, &msg_size);
+
+                send(curr_socket, msg, msg_size, 0);
+                free(msg);
+                
+
+                continue;
+
+
+            } else {
+
+                // find the temporary session entry, find all of the clients and get their sockets
+                struct session_entry* temp_session_entry = session_db_search_sid(temp_entry->session_ID[0], head_s);
+                
+                
+                bool iResult_soc = socket_db_leave_session(temp_entry,temp_session_entry->session_tag);
+
+                bool iResult_ses = session_db_leave_socket(curr_socket, temp_session_entry,head_s);
+                
+                if(iResult_soc&&iResult_ses)
+                {
+                
+                unsigned int msg_size;
+
+                reply_packet.type = LEAVE_SESS;
+                strcpy(reply_packet.source, "server");
+                strcpy(reply_packet.data, "Leave session successful");
+                reply_packet.size = strlen(reply_packet.data);
+
+                char* msg = msg_generator(reply_packet, &msg_size);
+
+                send(curr_socket, msg, msg_size, 0);
+                free(msg);
+                
+                
+                }else{
+                unsigned int msg_size;
+
+                reply_packet.type = LEAVE_SESS;
+                strcpy(reply_packet.source, "server");
+                strcpy(reply_packet.data, "Leave session failed");
+                reply_packet.size = strlen(reply_packet.data);
+
+                char* msg = msg_generator(reply_packet, &msg_size);
+
+                send(curr_socket, msg, msg_size, 0);
+                free(msg);
+                
+                
+                }
+
+
+
+
+            }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        }
+
+
+
+
+
+
 
 
 
@@ -781,12 +917,13 @@ int server_unix_action(int* listen_socket) {
 
 
 
-// check all entry are properly freed
-free(head);
+    // check all entry are properly freed
+    free(head);
+    free(head_s);
 
 
 
-return 0;
+    return 0;
 
 
 

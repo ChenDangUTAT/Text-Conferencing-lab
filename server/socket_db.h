@@ -31,9 +31,9 @@ struct socket_entry* socket_db_search_cid(char* client_id,struct socket_entry* h
 
 char* socket_db_traverse(struct socket_entry* head);
 
-bool socket_db_join_session();
+bool socket_db_join_session(struct socket_entry* tar,unsigned int session_tag);
 
-
+bool socket_db_leave_session(struct socket_entry* tar,unsigned int session_tag);
 
 
 

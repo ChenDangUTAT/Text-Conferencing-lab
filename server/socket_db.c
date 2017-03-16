@@ -209,3 +209,62 @@ bool socket_db_join_session(struct socket_entry* tar,unsigned int session_tag){
 
 }
 
+bool socket_db_leave_session(struct socket_entry* tar,unsigned int session_tag){
+
+    unsigned spot = 0;
+    
+    for(;spot<10&&tar->session_ID[spot]!=session_tag;spot++){}
+    
+    if(spot == 10){
+    
+        return false;
+    
+    }
+
+    
+    for(;spot<(10-1);spot++){
+    
+    
+        tar->session_ID[spot] = tar->session_ID[spot+1];
+    
+    
+
+    }
+    
+    spot = 0;
+    
+    
+    for(;spot<10&&tar->session_ID[spot]!=0;spot++){}
+    
+    if(spot == 0){
+    
+        tar->is_session_id_set = false;
+        
+    
+    }else
+    {
+        
+            tar->is_session_id_set = true;
+
+    
+    }
+    
+    return true;
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}

@@ -36,3 +36,5 @@ struct session_entry* session_db_search_sname(char* name,struct session_entry* h
 char* session_db_traverse(struct session_entry* head);
 
 bool session_db_join_socket(int socket_, struct session_entry * session);
+
+bool session_db_leave_socket(int socket_, struct session_entry* session,struct session_entry *head);

@@ -150,7 +150,7 @@ char* session_db_traverse(struct session_entry* head){
 bool session_db_join_socket(int socket_, struct session_entry * session){
     unsigned int spot = 0;
     
-    for(;session->socket_id[spot]!=0||spot == MAX_MEM;spot++){
+    for(;session->socket_id[spot]!=0 && spot < MAX_MEM;spot++){
         if(session->socket_id[spot] == socket_){
         
             return false;
@@ -172,6 +172,43 @@ bool session_db_join_socket(int socket_, struct session_entry * session){
 
 
 
+
+
+
+
+
+
+}
+
+
+bool session_db_leave_socket(int socket_, struct session_entry* session,struct session_entry *head){
+    unsigned int spot = 0;
+    
+    for(;session->socket_id[spot] != socket_&& spot < MAX_MEM;spot++){}
+    
+    if(spot == MAX_MEM){
+        return false;
+    }
+
+    for(;spot != MAX_MEM-1;spot++){
+    
+        session->socket_id[spot] =session->socket_id[spot+1];
+    
+    
+    }
+    
+
+    session->socket_id[spot] = 0;
+    
+    if(session->socket_id[0]==0){
+    
+    session_db_remove(session->session_tag, head);
+    
+    }
+    
+    
+    
+    return true;
 
 
 
