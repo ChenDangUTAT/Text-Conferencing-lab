@@ -23,7 +23,7 @@
 
 struct socket_entry* socket_db_add(struct socket_entry newcomer,struct socket_entry* head);
 
-struct socket_entry* socket_db_rm_sid(int socket_id,struct socket_entry* head);
+bool socket_db_rm_sid(int socket_id,struct socket_entry* head);
 
 struct socket_entry* socket_db_search_sid(int socket_id,struct socket_entry* head);
 
@@ -34,6 +34,8 @@ char* socket_db_traverse(struct socket_entry* head);
 bool socket_db_join_session(struct socket_entry* tar,unsigned int session_tag);
 
 bool socket_db_leave_session(struct socket_entry* tar,unsigned int session_tag);
+
+bool socket_db_deletion(struct socket_entry* head);
 
 
 

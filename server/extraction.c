@@ -44,7 +44,6 @@ bool extraction(char* msg_string, struct packet* packet) {
     
     if(packet->size>MAX_DATA){
         printf("The size received is not valid\n");
-        
         return false;
     }
 

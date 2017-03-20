@@ -26,7 +26,7 @@
 unsigned int session_db_add(char* session_name,int socket_, struct session_entry *head);
 
 
-void session_db_remove(unsigned int session_tag, struct session_entry *head);
+bool session_db_remove(unsigned int session_tag, struct session_entry *head);
 
 
 struct session_entry* session_db_search_sid(unsigned int session_tag,struct session_entry* head);
@@ -38,3 +38,5 @@ char* session_db_traverse(struct session_entry* head);
 bool session_db_join_socket(int socket_, struct session_entry * session);
 
 bool session_db_leave_socket(int socket_, struct session_entry* session,struct session_entry *head);
+
+bool session_db_deletion(struct session_entry *head);

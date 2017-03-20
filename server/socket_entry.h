@@ -19,6 +19,10 @@
 #define MAX_NAME 100
 #endif
 
+#ifndef MAX_SESS
+#define MAX_SESS 10
+#endif
+
 struct socket_entry{
 
     int socket_;
@@ -31,7 +35,7 @@ struct socket_entry{
     
     bool is_session_id_set;
     
-    unsigned int session_ID[10];
+    unsigned int session_ID[MAX_SESS];
     
     struct socket_entry* next;
    

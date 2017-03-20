@@ -10,11 +10,24 @@ unsigned int session_db_add(char* session_name,int socket_, struct session_entry
     
     // we add the element into the session
        struct session_entry* tail = head;
-
-    while(tail->next != NULL){
+       if( session_db_search_sname(session_name,head)!=NULL){
+       
+           //session already exists
+           return 0;
+           
+           
+           
+       }
+    
+       
+       
+       
+       while(tail->next != NULL){
         tail = tail->next;
 
     }    
+       
+       
     struct session_entry* new_entry = malloc(sizeof(struct session_entry));
     
     new_entry->session_tag = tail->session_tag+1;
@@ -36,7 +49,7 @@ unsigned int session_db_add(char* session_name,int socket_, struct session_entry
 }
 
 
-void session_db_remove(unsigned int session_tag, struct session_entry *head){
+bool session_db_remove(unsigned int session_tag, struct session_entry *head){
     
      struct session_entry* start = head -> next;
     
@@ -59,7 +72,7 @@ void session_db_remove(unsigned int session_tag, struct session_entry *head){
 
     if(start == NULL){
     // there is no such entry
-        return;
+        return false;
     }
     
     // there is such entry 
@@ -68,7 +81,7 @@ void session_db_remove(unsigned int session_tag, struct session_entry *head){
     
     free(start);
     
-    return;
+    return true;
 
     
     
@@ -212,6 +225,24 @@ bool session_db_leave_socket(int socket_, struct session_entry* session,struct s
 
 
 
+
+
+
+}
+
+
+bool session_db_deletion(struct session_entry *head){
+
+
+    if (head->next == NULL) {
+        free(head);
+        return true;
+    }
+    else {
+        struct session_entry* next = head->next;
+        free(head);
+        return socket_db_deletion(next);
+    }
 
 
 

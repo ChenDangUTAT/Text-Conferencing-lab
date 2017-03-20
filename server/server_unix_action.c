@@ -10,8 +10,6 @@
 #define MAX_TIMEOUT_SEC 180
 #define MAX_TIMEOUT_USEC 0
 
-#define DEBUGQU
-
 int server_unix_action(int* listen_socket) {
 
     // Here we will set up things to handle.
@@ -90,14 +88,14 @@ int server_unix_action(int* listen_socket) {
         if (iResult == -1) {
 
             printf("The select function failed\n");
-            return -1;
+            break;
         }
 
         if (iResult == 0) {
             printf("Timeout reached\n");
 
             // close all the available ports           
-            return 0;
+            break;
         }
 
         // if we reach here, then something interesting happens
@@ -118,7 +116,7 @@ int server_unix_action(int* listen_socket) {
                 return -1;
             }
 
-            bzero(new_entry.session_ID, sizeof (unsigned int)*10);
+            bzero(new_entry.session_ID, sizeof (unsigned int)*MAX_SESS);
 
             new_entry.socket_ = newcomer;
 
@@ -206,7 +204,6 @@ int server_unix_action(int* listen_socket) {
         }
 
         free(buffer);
-
         buffer = NULL;
 
 
@@ -258,10 +255,6 @@ int server_unix_action(int* listen_socket) {
 
 #endif 
 
-            // needs implementation
-            //bool valid = password_verification(new_packet.source,password);
-            //needs implementation
-
             if (/*password varification*/true) {
 
                 unsigned msg_size;
@@ -289,9 +282,7 @@ int server_unix_action(int* listen_socket) {
                 printf("The message sent should be %s\n", msg);
 #endif
                 send(curr_socket, msg, msg_size, 0);
-
                 free(msg);
-                continue;
 
 
             } else {
@@ -310,19 +301,19 @@ int server_unix_action(int* listen_socket) {
                 send(curr_socket, msg, msg_size, 0);
                 free(msg);
                 close(curr_socket);
-                socket_db_rm_sid(curr_socket,head);
-                FD_CLR(curr_socket,&all_user);
-                
-                
-                
-                continue;
+                socket_db_rm_sid(curr_socket, head);
+                FD_CLR(curr_socket, &all_user);
+
+
+
 
 
 
             }
 
 
-
+            free(password);
+            continue;
 
 
 
@@ -350,83 +341,72 @@ int server_unix_action(int* listen_socket) {
 
                 unsigned msg_size;
 
-                //still needs to quit all sessions if there is any.
-                
-                if(temp_entry->is_session_id_set){
-                    
-                struct session_entry* temp_session_entry = session_db_search_sid(temp_entry->session_ID[0], head_s);
-                
-                
-                bool iResult_soc = socket_db_leave_session(temp_entry,temp_session_entry->session_tag);
+                if (temp_entry->is_session_id_set) {
 
-                bool iResult_ses = session_db_leave_socket(curr_socket, temp_session_entry,head_s);
-                
-                
-        
-                
-                
-                
-                
-                
+                    //leaving all the sessions 
+
+                    struct session_entry* temp_session_entry = NULL;
+                    temp_session_entry=session_db_search_sid(temp_entry->session_ID[0], head_s);
+
+
+                    bool iResult_soc = socket_db_leave_session(temp_entry, temp_session_entry->session_tag);
+
+                    bool iResult_ses = session_db_leave_socket(curr_socket, temp_session_entry, head_s);
+
+                    if (!iResult_soc || !iResult_soc) {
+                        printf("Database error when leaving sessions during log out request\n");
+                        break;
+
+                    }
                 }
+                if (socket_db_rm_sid(curr_socket, head)) {
+                    reply_packet.type = EXIT;
+                    strcpy(reply_packet.source, "server");
+                    strcpy(reply_packet.data, "Logout successful");
+                    reply_packet.size = strlen(reply_packet.data);
 
-                socket_db_rm_sid(curr_socket, head);
-
-
-
-                reply_packet.type = EXIT;
-                strcpy(reply_packet.source, "server");
-                strcpy(reply_packet.data, "Logout successful");
-                reply_packet.size = strlen(reply_packet.data);
-
-                char* msg = msg_generator(reply_packet, &msg_size);
+                    char* msg = msg_generator(reply_packet, &msg_size);
 
 #ifdef DEBUGEXIT
-                temp_entry = socket_db_search_sid(curr_socket, head);
-                if (temp_entry == NULL) {
+                    temp_entry = socket_db_search_sid(curr_socket, head);
+                    if (temp_entry == NULL) {
 
-                    printf("The entry is no longer in the database\n");
+                        printf("The entry is no longer in the database\n");
 
-
-                } else {
-
-                    printf("Deletion failed, the entry is still in the database\n");
-                    printf("The entry remained is ");
-                    if (temp_entry ->is_client_id_set) {
-                        printf("logged in and has a id of %s\n", temp_entry ->client_ID);
 
                     } else {
-                        printf("not logged in\n");
+
+                        printf("Deletion failed, the entry is still in the database\n");
+                        printf("The entry remained is ");
+                        if (temp_entry ->is_client_id_set) {
+                            printf("logged in and has a id of %s\n", temp_entry ->client_ID);
+
+                        } else {
+                            printf("not logged in\n");
+                        }
+
+
                     }
-
-
-                }
 
 
 #endif
 
 
-                send(curr_socket, msg, msg_size, 0);
-                free(msg);
-                FD_CLR(curr_socket, &all_user);
-                close(curr_socket);
+                    send(curr_socket, msg, msg_size, 0);
+                    free(msg);
+                    FD_CLR(curr_socket, &all_user);
+                    close(curr_socket);
 
-                continue;
+                    continue;
+                } else {
 
+                    printf("Database error, such user does not exist\n");
+                    break;
 
-
-
-
-
-
-
-
-
+                }
             } else {
 
                 unsigned msg_size;
-
-                //still needs to quit all sessions if there is any.
 
                 socket_db_rm_sid(curr_socket, head);
 
@@ -460,11 +440,11 @@ int server_unix_action(int* listen_socket) {
                 strcpy(reply_packet.source, "server");
                 strcpy(reply_packet.data, "The user is not logged in");
                 reply_packet.size = strlen(reply_packet.data);
-
                 char* msg = msg_generator(reply_packet, &msg_size);
-
                 send(curr_socket, msg, msg_size, 0);
                 free(msg);
+
+
                 FD_CLR(curr_socket, &all_user);
                 close(curr_socket);
 
@@ -475,18 +455,6 @@ int server_unix_action(int* listen_socket) {
 
 
             }
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -507,38 +475,34 @@ int server_unix_action(int* listen_socket) {
 
                 if (session_db_search_sname(new_packet.data, head_s) != NULL) {
 
-                    //send rejection
+                    //send rejection, name too long
 
                     continue;
 
                 }
 
-                unsigned int empty = 0;
-                if (temp_entry->is_session_id_set == true) {
+                if (temp_entry->is_session_id_set && temp_entry->session_ID[MAX_SESS - 1] != 0) {
 
 
-                    for (; temp_entry->session_ID[empty] == 0 || empty > 9; empty++) {
+                    //send rejection, joined too many sessions
+                    continue;
 
-                    }
-
-                    if (empty > 9) {
-
-                        //send rejection, max section joined
-
-                        continue;
-
-                    }
-
-                    temp_entry->session_ID[empty] = session_db_add(new_packet.data, curr_socket, head_s);
-
-                } else {
-
-                    temp_entry->session_ID[0] = session_db_add(new_packet.data, curr_socket, head_s);
-
-                    temp_entry->is_session_id_set = true;
                 }
 
-                struct session_entry* session = session_db_search_sid(temp_entry->session_ID[empty], head_s);
+                // this will always be true since the we have already checked whether the user is full on session or not
+                unsigned int new_session_tag = session_db_add(new_packet.data, curr_socket, head_s);
+
+                if (new_session_tag == 0) {
+
+                    //send rejection,session with same name exists
+
+                    continue;
+
+                }
+
+                bool iResult = socket_db_join_session(temp_entry, new_session_tag);
+
+                struct session_entry* session = (struct session_entry*)session_db_search_sid(new_session_tag, head_s);
 
                 session_db_join_socket(curr_socket, session);
 
@@ -579,7 +543,7 @@ int server_unix_action(int* listen_socket) {
 #ifdef DEBUGQU
             printf("\nThe client string is %s\n\n", client_str);
 #endif
-            char* session_str = session_db_traverse(head_s);
+            char* session_str = (char*)session_db_traverse(head_s);
 
 #ifdef DEBUGQU
             printf("\nThe session string is %s\n\n", session_str);
@@ -602,22 +566,6 @@ int server_unix_action(int* listen_socket) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         }
 
 
@@ -627,11 +575,11 @@ int server_unix_action(int* listen_socket) {
 
             temp_entry = socket_db_search_sid(curr_socket, head);
 
-            if (/*temp_entry->is_session_id_set == false* this limits the user to join one session only
-                 */true
-                    ) {
+            if (/*temp_entry->is_session_id_set == false* 
+                 *this limits the user to join one session only
+                 */true) {
 
-                struct session_entry* curr_s = session_db_search_sname(new_packet.data, head_s);
+                struct session_entry* curr_s = (struct session_entry*)session_db_search_sname(new_packet.data, head_s);
 
                 if (curr_s == NULL) {
 
@@ -678,26 +626,10 @@ int server_unix_action(int* listen_socket) {
 
                     } else {
 
-
-
                         unsigned int msg_size;
-
-                        if (!iResult_full) {
-
-                            printf("Session is full\n");
-
-
-                        }
-
-                        if (!iResult_sfull) {
-                            printf("Join too many sessions\n");
-
-                        }
-
-
                         reply_packet.type = JN_NAK;
                         strcpy(reply_packet.source, "server");
-                        strcpy(reply_packet.data, "Session is full or you have joined too many sessions");
+                        strcpy(reply_packet.data, (iResult_sfull) ? "Session is full" : "you have joined too many sessions");
                         reply_packet.size = strlen(reply_packet.data);
 
                         char* msg = msg_generator(reply_packet, &msg_size);
@@ -720,6 +652,8 @@ int server_unix_action(int* listen_socket) {
 
                 }
             } else {
+
+                // old one session feature left over 
                 unsigned int msg_size;
 
                 reply_packet.type = JN_NAK;
@@ -748,9 +682,9 @@ int server_unix_action(int* listen_socket) {
 
 
             } else {
-
+                // potential feature for all session
                 // find the temporary session entry, find all of the clients and get their sockets
-                struct session_entry* temp_session_entry = session_db_search_sid(temp_entry->session_ID[0], head_s);
+                struct session_entry* temp_session_entry = (struct session_entry* )session_db_search_sid(temp_entry->session_ID[0], head_s);
 
                 int counter = 0;
                 for (; counter < MAX_MEM; counter++) {
@@ -758,7 +692,8 @@ int server_unix_action(int* listen_socket) {
                     // means end of session
                     if (temp_session_entry->socket_id[counter] == 0)
                         break;
-                    // send the msg=
+
+                    // send the msg
                     unsigned int msg_size;
 
                     reply_packet.type = MESSAGE;
@@ -795,25 +730,27 @@ int server_unix_action(int* listen_socket) {
 
         if (new_packet.type == LEAVE_SESS) {
 
+
+            // retrieve the user data from db
+            // this is almost a standard for every functionality
             temp_entry = NULL;
 
             temp_entry = socket_db_search_sid(curr_socket, head);
 
-            if (temp_entry->is_session_id_set == false) {
-                
-                                
-                unsigned int msg_size;
 
+
+            if (temp_entry->is_session_id_set == false) {
+                // this indicates the user is not in any session
+
+                unsigned int msg_size;
                 reply_packet.type = LEAVE_SESS;
                 strcpy(reply_packet.source, "server");
                 strcpy(reply_packet.data, "You are not in any session");
                 reply_packet.size = strlen(reply_packet.data);
-
                 char* msg = msg_generator(reply_packet, &msg_size);
-
                 send(curr_socket, msg, msg_size, 0);
                 free(msg);
-                
+
 
                 continue;
 
@@ -821,43 +758,44 @@ int server_unix_action(int* listen_socket) {
             } else {
 
                 // find the temporary session entry, find all of the clients and get their sockets
-                struct session_entry* temp_session_entry = session_db_search_sid(temp_entry->session_ID[0], head_s);
-                
-                
-                bool iResult_soc = socket_db_leave_session(temp_entry,temp_session_entry->session_tag);
+                // for now we only handle the case where user has one session
+                // in the future we may add functionality like multiple session
+                struct session_entry* temp_session_entry = NULL;
+                temp_session_entry = session_db_search_sid(temp_entry->session_ID[0], head_s);
 
-                bool iResult_ses = session_db_leave_socket(curr_socket, temp_session_entry,head_s);
-                
-                if(iResult_soc&&iResult_ses)
-                {
-                
-                unsigned int msg_size;
+                bool iResult_soc = socket_db_leave_session(temp_entry, temp_session_entry->session_tag);
 
-                reply_packet.type = LEAVE_SESS;
-                strcpy(reply_packet.source, "server");
-                strcpy(reply_packet.data, "Leave session successful");
-                reply_packet.size = strlen(reply_packet.data);
+                bool iResult_ses = session_db_leave_socket(curr_socket, temp_session_entry, head_s);
 
-                char* msg = msg_generator(reply_packet, &msg_size);
+                if (iResult_soc && iResult_ses) {
 
-                send(curr_socket, msg, msg_size, 0);
-                free(msg);
-                
-                
-                }else{
-                unsigned int msg_size;
+                    unsigned int msg_size;
 
-                reply_packet.type = LEAVE_SESS;
-                strcpy(reply_packet.source, "server");
-                strcpy(reply_packet.data, "Leave session failed");
-                reply_packet.size = strlen(reply_packet.data);
+                    reply_packet.type = LEAVE_SESS;
+                    strcpy(reply_packet.source, "server");
+                    strcpy(reply_packet.data, "Leave session successful");
+                    reply_packet.size = strlen(reply_packet.data);
 
-                char* msg = msg_generator(reply_packet, &msg_size);
+                    char* msg = msg_generator(reply_packet, &msg_size);
 
-                send(curr_socket, msg, msg_size, 0);
-                free(msg);
-                
-                
+                    send(curr_socket, msg, msg_size, 0);
+                    free(msg);
+
+
+                } else {
+                    unsigned int msg_size;
+
+                    reply_packet.type = LEAVE_SESS;
+                    strcpy(reply_packet.source, "server");
+                    strcpy(reply_packet.data, "Leave session failed");
+                    reply_packet.size = strlen(reply_packet.data);
+
+                    char* msg = msg_generator(reply_packet, &msg_size);
+
+                    send(curr_socket, msg, msg_size, 0);
+                    free(msg);
+
+
                 }
 
 
@@ -902,24 +840,12 @@ int server_unix_action(int* listen_socket) {
 
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     // check all entry are properly freed
-    free(head);
-    free(head_s);
+    session_db_deletion(head_s);
+    socket_db_deletion(head);
+
+
+
 
 
 
