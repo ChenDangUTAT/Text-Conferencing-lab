@@ -152,7 +152,6 @@ char* socket_db_traverse(struct socket_entry* head) {
         strcat(msg, "  ");
         start = start->next;
 
-
     }
 
     return msg;
@@ -173,6 +172,7 @@ bool socket_db_join_session(struct socket_entry* tar, unsigned int session_tag) 
 
 
     unsigned int empty = 0;
+    
     if (tar->is_session_id_set == true) {
 
 
@@ -198,12 +198,6 @@ bool socket_db_join_session(struct socket_entry* tar, unsigned int session_tag) 
     }
 
     return true;
-
-
-
-
-
-
 
 
 

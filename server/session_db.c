@@ -18,10 +18,6 @@ unsigned int session_db_add(char* session_name,int socket_, struct session_entry
            
            
        }
-    
-       
-       
-       
        while(tail->next != NULL){
         tail = tail->next;
 
@@ -41,7 +37,6 @@ unsigned int session_db_add(char* session_name,int socket_, struct session_entry
     bzero(new_entry->socket_id,sizeof(int)*MAX_MEM);
     
     new_entry->socket_id[0]=socket_;
-    
     
     return new_entry->session_tag;
 
@@ -170,13 +165,16 @@ bool session_db_join_socket(int socket_, struct session_entry * session){
         
         }
     
-    
-    
+   
     
     
     }
     
-    if(spot == MAX_MEM){return false;}
+    if(spot == MAX_MEM){
+    // the session full    
+        return false;
+    
+    }
     
     session->socket_id[spot] = socket_;
     

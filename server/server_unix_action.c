@@ -334,7 +334,6 @@ int server_unix_action(int* listen_socket) {
 
                 break;
 
-
             }
 
             if (temp_entry ->is_client_id_set == true) {
@@ -412,6 +411,7 @@ int server_unix_action(int* listen_socket) {
 
 
 #ifdef DEBUGEXIT
+                
                 temp_entry = socket_db_search_sid(curr_socket, head);
                 if (temp_entry == NULL) {
 
@@ -502,11 +502,6 @@ int server_unix_action(int* listen_socket) {
 
                 bool iResult = socket_db_join_session(temp_entry, new_session_tag);
 
-                struct session_entry* session = (struct session_entry*)session_db_search_sid(new_session_tag, head_s);
-
-                session_db_join_socket(curr_socket, session);
-
-
                 unsigned int msg_size;
                 reply_packet.type = NS_ACK;
                 strcpy(reply_packet.source, "server");
@@ -556,10 +551,8 @@ int server_unix_action(int* listen_socket) {
             strcpy(reply_packet.source, "server");
             strcpy(reply_packet.data, client_str);
             reply_packet.size = strlen(reply_packet.data);
-
-            char* msg = msg_generator(reply_packet, &msg_size);
-
-            send(curr_socket, msg, msg_size, 0);
+            char* msg = msg_generator(reply_packet,&msg_size);
+            send(curr_socket, msg,msg_size, 0);
             free(msg);
             free(client_str);
             free(session_str);
@@ -604,9 +597,21 @@ int server_unix_action(int* listen_socket) {
                     temp_entry = NULL;
 
                     temp_entry = socket_db_search_sid(curr_socket, head);
-
-                    bool iResult_sfull = socket_db_join_session(temp_entry, curr_s->session_tag);
-
+                    
+                    bool iResult_sfull = false;
+                    
+                    if(iResult_full){
+                    
+                        iResult_sfull = socket_db_join_session(temp_entry, curr_s->session_tag);
+                        if(!iResult_sfull){
+                       
+                        session_db_leave_socket(curr_socket,curr_s,head_s);
+                        
+                        }
+                    
+                    }
+                    
+                    
                     if (iResult_full && iResult_sfull) {
 
                         unsigned int msg_size;
@@ -760,13 +765,24 @@ int server_unix_action(int* listen_socket) {
                 // find the temporary session entry, find all of the clients and get their sockets
                 // for now we only handle the case where user has one session
                 // in the future we may add functionality like multiple session
+                
                 struct session_entry* temp_session_entry = NULL;
+                
+                unsigned int i = 0;
+                
+                bool iResult_soc = true; 
+                bool iResult_ses = true;
+                while(temp_entry->session_ID[i]!=0){
+                
+                     
                 temp_session_entry = session_db_search_sid(temp_entry->session_ID[0], head_s);
 
-                bool iResult_soc = socket_db_leave_session(temp_entry, temp_session_entry->session_tag);
+                iResult_soc = socket_db_leave_session(temp_entry, temp_session_entry->session_tag);
 
-                bool iResult_ses = session_db_leave_socket(curr_socket, temp_session_entry, head_s);
-
+                iResult_ses = session_db_leave_socket(curr_socket, temp_session_entry, head_s);
+                
+                
+                }
                 if (iResult_soc && iResult_ses) {
 
                     unsigned int msg_size;

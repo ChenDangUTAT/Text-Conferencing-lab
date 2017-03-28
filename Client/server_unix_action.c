@@ -354,31 +354,41 @@ int server_unix_action(int* listen_socket) {
                 if (temp_entry->is_session_id_set) {
 
                     //leaving all the sessions 
-							int count = 0;
-						  for(; temp_entry->session_ID[count]!=0;count++){
+		int count = 0;
+                struct session_entry* temp_session_entry = NULL;
+                bool iResult_soc = true;
+                bool iResult_ses = true;
+
+	        
+                while(; temp_entry->session_ID[count]!=0;){
 	
-								printf("logout testing %d\n",count);
-		                 struct session_entry* temp_session_entry = NULL;
+		 //use a for loop here to remove all of it
 
-							  //use a for loop here to remove all of it
-		                 temp_session_entry=session_db_search_sid(temp_entry->session_ID[count], head_s);
+		 temp_session_entry=session_db_search_sid(temp_entry->session_ID[count], head_s);
 
 
-		                 bool iResult_soc = socket_db_leave_session(temp_entry, temp_session_entry->session_tag);
+		 iResult_soc = iResult_soc && socket_db_leave_session(temp_entry, temp_session_entry->session_tag);
 
-		                 bool iResult_ses = session_db_leave_socket(curr_socket, temp_session_entry, head_s);
+		 iResult_ses = iResult && session_db_leave_socket(curr_socket, temp_session_entry, head_s);
 							
 
-							  // set back the counter
-							  count--;
+							 
 
-		                 if (!iResult_soc || !iResult_soc) {
-		                     printf("Database error when leaving sessions during log out request\n");
+		 if (!iResult_soc || !iResult_soc) {
+		    printf("Database error when leaving sessions during log out request\n");
 		                     break;
 
-		                 }
+		  }
 
-						}
+		}
+                
+		 if (!iResult_soc || !iResult_soc) {
+
+		                     break;
+
+		  }
+
+
                 }
                 if (socket_db_rm_sid(curr_socket, head)) {
                     reply_packet.type = EXIT;
@@ -599,7 +609,7 @@ int server_unix_action(int* listen_socket) {
             if (/*temp_entry->is_session_id_set == false* 
                  *this limits the user to join one session only
                  */true) {
-					 printf("the packet data is %s\n", new_packet.data);
+					 
                 struct session_entry* curr_s = (struct session_entry*)session_db_search_sname(new_packet.data, head_s);
 
                 if (curr_s == NULL) {
@@ -626,7 +636,21 @@ int server_unix_action(int* listen_socket) {
 
                     temp_entry = socket_db_search_sid(curr_socket, head);
 
-                    bool iResult_sfull = socket_db_join_session(temp_entry, curr_s->session_tag);
+                    bool iResult_sfull = false;
+                    if(iResult_full)
+                    {
+
+                    iResult_sfull = socket_db_join_session(temp_entry, curr_s->session_tag);
+                    
+                    if(!iResult_sfull){
+                    session_db_leave_socket(curr_socket,curr_s,head_s);
+                    }
+
+
+                    }
+
+
+
 
                     if (iResult_full && iResult_sfull) {
 
@@ -751,15 +775,14 @@ t_out.tv_usec = 100;
 //FD_SET(temp_session_entry->socket_id[counter],&write);
 //if(select(temp_session_entry->socket_id[counter],NULL,&write,NULL,&t_out)==0){
 //timeout process
-       //free(msg);
-
+//free(msg);
 //continue;
 //}else{}				 
 								// wait for certain period of tiem 
-							  sleep(1);
+				sleep(1);
 
- 							  printf("used socket number test%d\n",temp_session_entry->socket_id[counter]);
-							  send(temp_session_entry->socket_id[counter], msg, msg_size, 0);
+ 				printf("used socket number test%d\n",temp_session_entry->socket_id[counter]);
+			        send(temp_session_entry->socket_id[counter], msg, msg_size, 0);
 		                 
 		                 free(msg);
 
@@ -813,24 +836,25 @@ t_out.tv_usec = 100;
             } else {
 
                 // find the temporary session entry, find all of the clients and get their sockets
-                // for now we only handle the case where user has one session
-                // in the future we may add functionality like multiple session
-
-
-					// leave all the session in this case
+                // leave all the session in this case
 
 				 int count =0;
 				 bool iResult_soc= true;
 				 bool iResult_ses = true;
-				 for(; temp_entry->session_ID[count]!=0;count++){
+	        for(; temp_entry->session_ID[count]!=0;){
+
                 struct session_entry* temp_session_entry = NULL;
+
                 temp_session_entry = session_db_search_sid(temp_entry->session_ID[count], head_s);
 
-                iResult_soc = socket_db_leave_session(temp_entry, temp_session_entry->session_tag);
+                iResult_soc = iResult_soc && socket_db_leave_session(temp_entry, temp_session_entry->session_tag);
 
-                iResult_ses= session_db_leave_socket(curr_socket, temp_session_entry, head_s);
-					 count--;
-					}
+                iResult_ses= iResult_ses && session_db_leave_socket(curr_socket, temp_session_entry, head_s);
+
+					 
+
+
+		}
 
                 if (iResult_soc && iResult_ses) {
 
