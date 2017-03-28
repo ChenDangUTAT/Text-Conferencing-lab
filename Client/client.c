@@ -6,7 +6,7 @@
 int socketglobal = 0;
 int quitIndicator = 0;
 int connectionEstablished = 0;
-char *actualClient = NULL;
+char actualClient[100];
 
 
 /******************Data End *************************************/
@@ -21,7 +21,11 @@ int establishConnection(const char* IP_address, char* portNum);
 
 char* processMsgAndType(char **msg, int numberOfInputs, int* connectionEstablishedTest){
 
-	printf("wtf %s\n",actualClient);
+	//printf("wtf %s\n",actualClient);
+
+
+	char *testMsg = malloc(sizeof(char)*400);
+	
 	unsigned int type = 0;
 	// case statements
 	// for number of inputs
@@ -36,39 +40,43 @@ char* processMsgAndType(char **msg, int numberOfInputs, int* connectionEstablish
 			// leave the session case
 
 			// potential fk up!
-			msg[0][strlen(msg[0])-1] ='\0';
-			if(*connectionEstablishedTest!=0 && strcmp(msg[0],"/quit")!=0){
-				if(strcmp(msg[0],"/leavesession") == 0){
+			strcpy(testMsg,msg[0]);
+			// get the test msg last to be 0
+			testMsg[strlen(testMsg)-1]='\0';
+			//printf("wtf2 %s\n",actualClient);
+			//printf("testMsg output %s\n",testMsg);
+			if(*connectionEstablishedTest!=0 && strcmp(testMsg,"/quit")!=0){
+				if(strcmp(testMsg,"/leavesession") == 0){
 					type= LEAVE_SESS;
 					char *leaveSessMsg ="leaveSess";
 					return process_msg_phase_two(type,strlen(leaveSessMsg),leaveSessMsg);
 				}
-				else if(strcmp(msg[0],"/list") == 0){
+				else if(strcmp(testMsg,"/list") == 0){
 					type= QUERY;
 					char *queryMsg ="query";
 					return process_msg_phase_two(type,strlen(queryMsg),queryMsg);
 				}
-				else if(strcmp(msg[0],"/logout") ==0){
+				else if(strcmp(testMsg,"/logout") ==0){
 					type =EXIT;
 					// we want to log out
 					char *logoutMsg ="logout";
-					printf("the client id is %s\n",actualClient);
+					//printf("the client id is %s\n",actualClient);
 					char * test = process_msg_phase_two(type,strlen(logoutMsg),logoutMsg);
-					printf("the client id is %s\n",actualClient);
+					//printf("the client id is %s\n",actualClient);
 					return test;
 
 				}
 				// set the message
 				else{
 					type = MESSAGE;
-					return process_msg_phase_two(type,strlen(msg[0]),msg[0]);
+					return process_msg_phase_two(type,strlen(testMsg),testMsg);
 				}
 		}
 			else{
-				printf("test \n");
-				if(strcmp(msg[0],"/quit")==0 ){
+				//printf("test \n");
+				if(strcmp(testMsg,"/quit")==0 ){
 					// close the connection without notifying
-					printf("test 2\n");
+					//printf("test 2\n");
 					if(*connectionEstablishedTest!=0){
 						type =EXIT;
 						char *quitMsg ="quit";
@@ -76,7 +84,7 @@ char* processMsgAndType(char **msg, int numberOfInputs, int* connectionEstablish
 						return process_msg_phase_two(type,strlen(quitMsg),quitMsg);
 					}
 					else{
-							printf("test 6\n");
+							//printf("test 6\n");
 						quitIndicator = 1;
 						return NULL;
 
@@ -89,7 +97,7 @@ char* processMsgAndType(char **msg, int numberOfInputs, int* connectionEstablish
 					printf("Please establish a connection first\n");
 					return NULL;
 				}
-				printf("test 4\n");
+				//printf("test 4\n");
 			}
 			break;
 	
@@ -97,15 +105,23 @@ char* processMsgAndType(char **msg, int numberOfInputs, int* connectionEstablish
 			if(*connectionEstablishedTest==1){
 				if(strcmp(msg[0],"/joinsession")==0){
 					// get the type as join
+					strcpy(testMsg,msg[1]);
+					// get the test msg last to be 0
+					testMsg[strlen(testMsg)-1]='\0';
 					type =JOIN;
-					return process_msg_phase_two(type,strlen(msg[1]),msg[1]);
+					return process_msg_phase_two(type,strlen(testMsg),testMsg);
 
 				}
 				else if(strcmp(msg[0],"/createsession")==0){
+
+	
+					strcpy(testMsg,msg[1]);
+					// get the test msg last to be 0
+					testMsg[strlen(testMsg)-1]='\0';
 					// get the new session
 					type=NEW_SESS;
 					// we send the message for creating new session
-					return process_msg_phase_two(type,strlen(msg[1]),msg[1]);
+					return process_msg_phase_two(type,strlen(testMsg),testMsg);
 				}
 				else{
 					// send the msg as string
@@ -129,8 +145,8 @@ char* processMsgAndType(char **msg, int numberOfInputs, int* connectionEstablish
 				type = LOGIN;
 				// check if the connection is set
 				if(*connectionEstablishedTest==0){
-					printf("test 3%s", msg[3]);
-					printf("test 4%s", msg[4]);
+					//printf("test 3%s", msg[3]);
+					//printf("test 4%s", msg[4]);
 					int resultCheck = establishConnection(msg[3],msg[4]);
 					if(resultCheck == -1){
 						printf("failed connection\n");
@@ -145,36 +161,36 @@ char* processMsgAndType(char **msg, int numberOfInputs, int* connectionEstablish
 						strcat(tempMsg,":");
 						strcat(tempMsg,msg[2]);
 						// copy the second msg into client ID
-						actualClient = msg[1];
+						strcpy(actualClient,msg[1]);
 						
-						printf("test client ID intializer%s\n",actualClient);
-						printf("temp msg%s\n",tempMsg);			
-						printf("%d test h\n", strlen(tempMsg));
+						//printf("test client ID intializer%s\n",actualClient);
+						//printf("temp msg%s\n",tempMsg);			
+						//printf("%d test h\n", strlen(tempMsg));
 						return process_msg_phase_two(type,strlen(tempMsg),tempMsg);
 					}
 				}
 				else{
 					//check if log in yet
-					if(actualClient!=NULL){
+					
 						printf("error, you already logged in\n");
 						return NULL;
-					}
+					//}
 					// we pack 
-					else{
+					
 						
 						//strcat the result in the form of
 						// type:size:clientID,data
-						printf("test 2\n");
-						char *tempMsg = malloc(sizeof(char) *400);
-						strcat(tempMsg,msg[1]);
-						strcat(tempMsg,":");
-						strcat(tempMsg,msg[2]);
-						printf("temp msg%s\n",tempMsg);			
-						actualClient = msg[1];
-						printf("test client ID intializer%s\n",actualClient);
-						return process_msg_phase_two(type,strlen(tempMsg),tempMsg);
+						//printf("test 2\n");
+						//char *tempMsg = malloc(sizeof(char) *400);
+						//strcat(tempMsg,msg[1]);
+						//strcat(tempMsg,":");
+						//strcat(tempMsg,msg[2]);
+						//printf("temp msg%s\n",tempMsg);			
+						//strcpy(actualClient,msg[1]);
+						//printf("test client ID intializer%s\n",actualClient);
+						//return process_msg_phase_two(type,strlen(tempMsg),tempMsg);
 
-					}
+					
 				}
 			}
 			else{
@@ -241,7 +257,7 @@ char *process_msg_phase_two(int type,int size, const char* msg){
 		strcat(msgGot,":");
 		strcpy(temp,actualClient);
 		strcat(msgGot,temp);
-		printf("test change for client ID%s\n",actualClient);
+		//printf("test change for client ID%s\n",actualClient);
 		strcat(msgGot,":");
 		strcat(msgGot,msg);	
 		return msgGot;
@@ -340,7 +356,7 @@ void* pthread_stub(void *arg){
 					printf("session acknowledged, sessionID is %s\n",recvMsgPack.data);
 					break;
 				case QU_ACK:
-					printf("%s\n",recvMsgPack.data);
+					printf("\n The queries are\n%s\n",recvMsgPack.data);
 					break;
 				case MESSAGE:
 					printf("%s\n",recvMsgPack.data);
@@ -351,7 +367,10 @@ void* pthread_stub(void *arg){
 					close(socketglobal);
 					socketglobal = 0;
 					printf("successfully logged out,%s\n",recvMsgPack.data);
-					break;					
+					break;
+				case LEAVE_SESS:
+					printf("\n successfully leave the session %s\n",recvMsgPack.data);
+					break;				
 				default:
 					printf("server has servere problem \n");
 
@@ -391,8 +410,8 @@ int decodeMsg(char *recvMsg, struct lab3message* recvMsgStruct){
 	}
 	// get the last part out
 	processor[3] = strtok(NULL,"");
-	printf("test to see what are left%s\n",recvMsg);
-	printf("test to see what left #2 %s\n",processor[3]);
+	//printf("test to see what are left%s\n",recvMsg);
+	//printf("test to see what left #2 %s\n",processor[3]);
 	// decode the first type to enter switch statement
 	msgType = atoi(processor[0]);
 
@@ -406,7 +425,7 @@ int decodeMsg(char *recvMsg, struct lab3message* recvMsgStruct){
 		printf("the string can not be decoded\n");
 		return -1;
 	}
-	printf("final section test\n");
+	//printf("final section test\n");
 	recvMsgStruct->size = (unsigned int)size;
 	recvMsgStruct->type =(unsigned int) msgType;
 	// copy into the result
@@ -476,16 +495,16 @@ int main(int argc,char *argv[]){
 				msgArray[counter] = strtok(NULL," ");
 			}
 			// we check for the counter value 
-			printf("first test %s\n", msgArray[2]);
+			//printf("first test %s\n", msgArray[2]);
 			char *processedMsg = processMsgAndType(msgArray,counter,&connectionEstablished);	
 			//printf("The processed msg is %s\n", processedMsg);
-			printf("frustrating test %s\n",actualClient);
+			//printf("frustrating test %s\n",actualClient);
 			// we want to  send this msg to the msg
 			if(connectionEstablished && processedMsg !=NULL){
 				send(socketglobal,processedMsg,strlen(processedMsg)+1,0);
-				printf("first message sent test\n");
+				//printf("first message sent test\n");
 			}
-			printf("frustrating test 2 %s\n",actualClient);
+			//printf("frustrating test 2 %s\n",actualClient);
 			int testCount = 0;
 			for(;testCount <500; testCount ++){
 				msgArray[testCount] = NULL;
@@ -503,7 +522,7 @@ int main(int argc,char *argv[]){
 	// close the socket
 	if(socketglobal)	
 		close(socketglobal);
-	printf("test 5\n");
+	//printf("test 5\n");
 	exit(0);
 }
 
