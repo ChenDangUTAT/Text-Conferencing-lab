@@ -14,10 +14,11 @@
 #define MAX_TIMEOUT_USEC 0
 
 
-void waitFor (unsigned int secs) {
-    unsigned int retTime = time(0) + secs;   // Get finishing time.
-    while (time(0) < retTime);               // Loop until it arrives.
-}
+
+
+bool password_verification(char* name,char* password);
+
+
 
 
 int server_unix_action(int* listen_socket) {
@@ -265,7 +266,7 @@ int server_unix_action(int* listen_socket) {
 
 #endif 
 
-            if (/*password varification*/true) {
+            if (password_verification(new_packet.source,password)) {
 
                 unsigned msg_size;
 
@@ -360,7 +361,7 @@ int server_unix_action(int* listen_socket) {
                 bool iResult_ses = true;
 
 	        
-                while(; temp_entry->session_ID[count]!=0;){
+                for(; temp_entry->session_ID[count]!=0;){
 	
 		 //use a for loop here to remove all of it
 
@@ -960,3 +961,55 @@ t_out.tv_usec = 100;
 
 
 }
+
+
+
+
+#define MAX_USER 3 
+const char** username_db[MAX_USER] = {"Chen","Peter","Hamid"};
+const char** password_db[MAX_USER] = {"Nech","Retep","Dimah"};
+
+
+bool password_verification(char* name,char* password){
+
+
+		printf("the name is %s\n",name);
+		printf("the pass is %s\n",password);
+		int count = 0;
+		for(;count<MAX_USER;count++){
+			// means found one
+			if(strcmp(name,username_db[count])==0){
+
+				if(strcmp(password,password_db[count])!=0)
+					return false;
+				else 
+					return true;
+			}
+			
+		}
+		return false;
+
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

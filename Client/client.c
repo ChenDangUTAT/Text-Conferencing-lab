@@ -157,9 +157,20 @@ char* processMsgAndType(char **msg, int numberOfInputs, int* connectionEstablish
 						// set the connection established
 						*connectionEstablishedTest =1;
 						char *tempMsg = malloc(sizeof(char) *400);
+
+					  bzero(tempMsg, sizeof (char)*400);
+
+						printf("msg one is %s\n",msg[1]);
+				
 						strcat(tempMsg,msg[1]);
+						printf("test temp msg is %s\n",tempMsg);
+
 						strcat(tempMsg,":");
+						printf("test temp msg is %s\n",tempMsg);
+						printf("msg two is %s\n",msg[2]);
 						strcat(tempMsg,msg[2]);
+
+						printf("test temp msg is %s\n",tempMsg);
 						// copy the second msg into client ID
 						strcpy(actualClient,msg[1]);
 						
