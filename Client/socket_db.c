@@ -5,6 +5,7 @@
  */
 
 #include "socket_db.h"
+#include "session_db.h"
 
 struct socket_entry* socket_db_add(struct socket_entry newcomer, struct socket_entry* head) {
 
@@ -150,6 +151,9 @@ char* socket_db_traverse(struct socket_entry* head) {
     while (start != NULL) {
         strcat(msg, start->client_ID);
         strcat(msg, "  ");
+		
+
+
         start = start->next;
 
 

@@ -18,7 +18,43 @@
 
 bool password_verification(char* name,char* password);
 
+char* db_traverse(struct session_entry* head,struct socket_entry*head_s){
 
+    struct socket_entry* start = head_s->next;
+    
+    char* msg = malloc(sizeof(char)*400);
+    
+    bzero(msg,sizeof(char)*400);
+    
+    strcat(msg,"\nThe session ids of client are :");
+    
+    while(start != NULL){
+    
+			
+		  strcat(msg,start->client_ID);
+			int count =0;
+			 strcat(msg,":");
+			printf("test\n");
+    		for(;start->session_ID[count]!=0;count++){
+					struct session_entry* mid = session_db_search_sid(start->session_ID[count],head);
+					printf("%s\n",mid->session_id);
+					strcat(msg,mid->session_id);
+					strcat(msg," ");
+
+				}
+    
+    
+        start = start->next;
+               
+    
+    }
+    
+
+
+
+    return msg;
+
+}
 
 
 int server_unix_action(int* listen_socket) {
@@ -581,6 +617,13 @@ int server_unix_action(int* listen_socket) {
             printf("\nThe session string is %s\n\n", session_str);
 #endif           
             strcat(client_str, session_str);
+
+
+				char * total_str = (char*)db_traverse(head_s,head);
+				strcat(client_str,total_str);
+
+				// we want the user correspondent id
+				
 
             unsigned int msg_size;
 
