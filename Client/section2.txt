@@ -1,0 +1,11 @@
+Section 2 implementation:
+For the server side, we decide to use the following functionality for our users.
+
+We decide to allow user to join multiple conference sessions. For instance, if client A is joining one session at most beforehand, the client can now join multiple sessions and receive messages from all the sessions. 
+
+
+There are several steps that we implement during section two to enable this functionality. To begin with, we first start modifying the linked list which stores the client information to allow client to join multiple sessions. Then, we changed the message handling part to make server loop through all of the users in the same session and all of the users session to send out the messages. At last, we add a delay when sending each message to avoid synchronization issues.
+
+Then, whenever users in the session receive a message, a message format ServerName:clientName:Message will be sent to the client side to demonstrate that they actually received the message. To wrap things up, we will also remove all of the clients' session when they log out or leavesession to make things less complicated
+
+Note: for error checking, if the user is already in the same session, he or she can not join the same session again. Also, we have a limit about how many sessions at most one client can join to make things not too complicated
